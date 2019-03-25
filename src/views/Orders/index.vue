@@ -88,6 +88,7 @@ export default {
       pagenum: 1,
       pagesize: 10,
       total: 0
+
       // rules: {
       //   username: [
       //     { required: true, message: '请输入用户名', trigger: 'blur' }
