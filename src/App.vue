@@ -1,5 +1,11 @@
 <template>
-  <div id="app">开始项目吧</div>
+  <div id="app">
+    <router-view></router-view>
+  </div>
 </template>
 
-<style></style>
+<style scoped>
+#app {
+  height: 100%;
+}
+</style>
