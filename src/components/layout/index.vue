@@ -99,6 +99,8 @@
 </template>
 
 <script>
+import { removeToken } from '@/utils/auth'
+
 export default {
   name: 'Layout',
   data () {
@@ -111,7 +113,23 @@ export default {
       this.isCollapse = !this.isCollapse
     },
     logout () {
-
+      this.$confirm('确定要退出登录吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$message({
+          type: 'success',
+          message: '已退出登录'
+        })
+        removeToken()
+        this.$router.replace('/login')
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消退出'
+        })
+      })
     },
     handleOpen () {
 

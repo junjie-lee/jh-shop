@@ -1,5 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import { getToken } from '@/utils/auth'
+
 import Login from '@/views/Login'
 import Layout from '@/components/Layout'
 import Home from '@/views/Home'
@@ -37,7 +39,7 @@ router.beforeEach((to, from, next) => {
     return next()
   }
 
-  const token = window.localStorage.getItem('token')
+  const token = getToken()
 
   if (!token) {
     return next('/login')

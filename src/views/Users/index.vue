@@ -10,12 +10,14 @@
     </div>
     <el-row :gutter="20" style="margin-top: -10px;margin-bottom: 5px;">
       <el-col :span="6">
-        <el-input placeholder="请输入内容" v-model="searchText" class="input-with-select">
-          <el-button slot="append" icon="el-icon-search"></el-button>
+        <el-input placeholder="请输入内容" v-model="searchText" class="input-with-select"
+          @keyup.enter.native="loadUsers">
+          <el-button slot="append" icon="el-icon-search" @click="loadUsers"></el-button>
         </el-input>
       </el-col>
       <el-col :span="6">
-        <el-button type="primary" @click="addUserVisible = true">添加用户</el-button>
+        <el-button type="primary" plain @click="$refs.addUserEl.showAddDialog()">
+          添加用户</el-button>
       </el-col>
     </el-row>
     <el-table :data="tableUsers" border stripe style="width: 100%">
@@ -29,14 +31,17 @@
       <el-table-column prop="mobile" label="电话" header-align="center"></el-table-column>
       <el-table-column label="用户状态" header-align="center" align="center" width="100">
         <template slot-scope="scope">
-          <el-switch v-model="scope.row.mg_state" active-color="#13ce66"></el-switch>
+          <el-switch v-model="scope.row.mg_state" active-color="#13ce66" @change="changeUserState(scope.row)"></el-switch>
         </template>
       </el-table-column>
       <el-table-column label="操作" header-align="center"  align="center" width="200">
         <template slot-scope="scope">
-          <el-button type="primary" size="small" plain icon="el-icon-edit" title="编辑用户"></el-button>
-          <el-button type="danger" size="small" plain icon="el-icon-delete" title="删除用户"></el-button>
-          <el-button type="warning" size="small" plain icon="el-icon-check" title="分配角色"></el-button>
+          <el-button type="primary" size="small" plain icon="el-icon-edit"
+            title="编辑用户" @click="$refs.editUserEl.showEditDialog(scope.row)"></el-button>
+          <el-button type="danger" size="small" plain icon="el-icon-delete"
+            title="删除用户" @click="deleteUser(scope.row)"></el-button>
+          <el-button type="warning" size="small" plain icon="el-icon-check"
+            title="分配角色" @click="$refs.allotUserEl.showAllotDialog(scope.row)"></el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -47,31 +52,21 @@
       </el-pagination>
     </div>
   </el-card>
-  <el-dialog title="添加用户" :visible.sync="addUserVisible" width="500px">
-    <el-form :model="addForm" label-position="left" :rules="rules" ref="addForm">
-      <el-form-item label="用户名" prop="username" label-width="80px">
-        <el-input v-model="addForm.username" autocomplete="off"></el-input>
-      </el-form-item>
-      <el-form-item prop="password" label="密码" label-width="80px">
-        <el-input type="password" v-model="addForm.password" autocomplete="off"></el-input>
-      </el-form-item>
-      <el-form-item label="邮箱" prop="email" label-width="80px">
-        <el-input v-model="addForm.email" autocomplete="off"></el-input>
-      </el-form-item>
-      <el-form-item label="电话" prop="mobile" label-width="80px">
-        <el-input v-model="addForm.mobile" autocomplete="off"></el-input>
-      </el-form-item>
-    </el-form>
-    <div slot="footer" class="dialog-footer">
-      <el-button @click="addUserVisible = false">取 消</el-button>
-      <el-button type="primary" @click="addUserHandler">确 定</el-button>
-    </div>
-  </el-dialog>
+
+  <!-- 添加用户组件 -->
+  <add-user ref="addUserEl" v-on:add-success="loadUsers"></add-user>
+  <!-- 编辑用户组件 -->
+  <edit-user ref="editUserEl" v-on:edit-success="loadUsers"></edit-user>
+  <!-- 分配用户角色 -->
+  <allot-user ref="allotUserEl"></allot-user>
 </div>
 </template>
 
 <script>
-import { getUsers, addUser } from '@/api/users'
+import AddUser from './add.vue'
+import EditUser from './edit.vue'
+import AllotUser from './allot-user'
+import { getUsers, deleteUserById, changeUserState } from '@/api/users'
 export default {
   name: 'Users',
   created () {
@@ -81,60 +76,27 @@ export default {
     return {
       tableUsers: [],
       searchText: '',
-      addUserVisible: false,
-      addForm: {
-        username: '',
-        password: '',
-        email: '',
-        mobile: ''
-      },
       pagenum: 1,
       pagesize: 10,
-      total: 0,
-      rules: {
-        username: [
-          { required: true, message: '请输入用户名', trigger: 'blur' }
-        ],
-        password: [
-          { required: true, message: '请输入密码', trigger: 'blur' },
-          { min: 6, max: 16, message: '密码长度在6至16个字符之间', trigger: 'blur' }
-        ],
-        email: [
-          { required: true, message: '请输入邮箱', trigger: 'blur' },
-          { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
-        ],
-        mobile: [
-          { required: true, message: '请输入电话', trigger: 'blur' },
-          { min: 11, max: 11, message: '手机号必须为11位', trigger: 'blur' }
-        ]
-      }
+      total: 0
     }
+  },
+  components: {
+    AddUser,
+    EditUser,
+    AllotUser
   },
   methods: {
     loadUsers () {
       getUsers({
         pagenum: this.pagenum,
         pagesize: this.pagesize
-      }).then(res => {
+      }, this.searchText).then(res => {
         let { data, meta } = res
         console.log(data)
         if (meta.status === 200) {
           this.tableUsers = data.users
           this.total = data.total
-        }
-      })
-    },
-    addUserHandler () {
-      this.$refs['addForm'].validate((valid) => {
-        if (valid) {
-          addUser(this.addForm).then(res => {
-            let { meta } = res
-            console.log(meta)
-            if (meta.status === 201) {
-              this.$refs['addForm'].resetFields()
-              this.addUserVisible = false
-            }
-          })
         }
       })
     },
@@ -148,6 +110,39 @@ export default {
     },
     caculateOrder (index) {
       return (this.pagenum - 1) * this.pagesize + index + 1
+    },
+    deleteUser (user) {
+      this.$confirm('确定要删除该用户吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteUserById(user.id).then(res => {
+          const { meta } = res
+          if (meta.status === 200) {
+            this.$message({
+              type: 'success',
+              message: '删除用户成功!'
+            })
+            this.loadUsers()
+          }
+        })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
+      })
+    },
+    async changeUserState (user) {
+      const { meta, data } = await changeUserState(user.id, user.mg_state)
+      console.log(data)
+      if (meta.status === 200) {
+        this.$message({
+          type: 'success',
+          message: `${data.mg_state ? '开启' : '禁用'}用户成功`
+        })
+      }
     }
   }
 }

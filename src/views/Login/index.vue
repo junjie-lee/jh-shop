@@ -23,6 +23,8 @@
 
 <script>
 import { login } from '@/api'
+import { setToken } from '@/utils/auth'
+
 export default {
   name: 'Login',
   data () {
@@ -68,7 +70,7 @@ export default {
 
             if (status === 200) {
               // 将用户的登录令牌存入本地
-              window.localStorage.setItem('token', data.token)
+              setToken(data.token)
               this.$router.replace('/')
             } else if (status === 400) {
               console.log(msg)
