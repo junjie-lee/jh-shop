@@ -5,7 +5,6 @@
       <el-breadcrumb separator-class="el-icon-arrow-right">
         <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
         <el-breadcrumb-item>订单管理</el-breadcrumb-item>
-        <el-breadcrumb-item>订单列表</el-breadcrumb-item>
       </el-breadcrumb>
     </div>
     <el-row :gutter="20" style="margin-top: -10px;margin-bottom: 5px;">
@@ -25,14 +24,27 @@
         </template>
       </el-table-column>
       <el-table-column prop="order_number" label="订单编号" header-align="center" align="center"></el-table-column>
-      <el-table-column prop="order_price" label="订单价格(￥)" header-align="center" width="120" align="center"></el-table-column>
+      <el-table-column label="订单价格(￥)" header-align="center" width="120" align="center">
+        <template slot-scope="scope">
+          <span v-text="formatOrderNumber(scope.row.order_price)"></span>
+        </template>
+      </el-table-column>
       <el-table-column prop="user_id" label="下单用户" header-align="center" width="100" align="center"></el-table-column>
-      <el-table-column prop="order_pay" label="是否付款" header-align="center" width="100" align="center"></el-table-column>
+      <el-table-column label="是否支付" header-align="center" width="100" align="center">
+        <template slot-scope="scope">
+          <span v-text="formatPayStatus(scope.row.pay_status)"></span>
+        </template>
+      </el-table-column>
       <el-table-column prop="is_send" label="是否发货" header-align="center" width="100" align="center"></el-table-column>
-      <el-table-column prop="create_time" label="下单时间" header-align="center" align="center"></el-table-column>
+      <el-table-column label="下单时间" header-align="center" align="center">
+        <template slot-scope="scope">
+          <span v-text="formatOrderDate(scope.row.create_time)"></span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" header-align="center"  align="center" width="140">
         <template slot-scope="scope">
-          <el-button type="primary" size="small" plain icon="el-icon-edit" title="编辑订单"></el-button>
+          <el-button type="primary" size="small" plain icon="el-icon-edit" title="编辑订单"
+            @click="editOrderHandler(scope.row)"></el-button>
           <el-button type="warning" size="small" plain icon="el-icon-location-outline" title="物流信息"></el-button>
         </template>
       </el-table-column>
@@ -69,6 +81,7 @@
 
 <script>
 import { getOrders } from '@/api/orders'
+import { formatDate } from '@/utils/format'
 export default {
   name: 'Orders',
   created () {
@@ -145,6 +158,18 @@ export default {
     },
     caculateOrder (index) {
       return (this.pagenum - 1) * this.pagesize + index + 1
+    },
+    formatOrderDate (date) {
+      return formatDate(date)
+    },
+    formatOrderNumber (number, fix = 2) {
+      return number.toFixed(2)
+    },
+    formatPayStatus (status) {
+      return status === '0' ? '否' : '是'
+    },
+    editOrderHandler (order) {
+      console.log(order)
     }
   }
 }

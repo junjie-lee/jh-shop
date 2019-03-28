@@ -36,7 +36,7 @@ export default {
   },
   methods: {
     loadRights () {
-      getRights().then(res => {
+      getRights('list').then(res => {
         console.log(res)
         let { meta, data } = res
         if (meta.status === 200) {

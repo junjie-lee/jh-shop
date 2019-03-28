@@ -2,7 +2,7 @@
 <div class="layout">
   <el-container>
     <el-aside width="200px" :class="{'aside-collapse': isCollapse}">
-      <el-menu default-active="1" class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose"
+      <el-menu :default-active="$route.path" class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose"
         :collapse="isCollapse" background-color="#545c64" text-color="#9d9d9d" active-text-color="#ffd04b"
         unique-opened router>
         <div class="logo"></div>
@@ -10,18 +10,10 @@
           <i class="iconfont icon-shouye1 icon-menu"></i>
           <span slot="title">主页</span>
         </el-menu-item>
-        <el-submenu index="2">
-          <template slot="title">
-            <i class="iconfont icon-yonghuguanli1 icon-menu"></i>
-            <span slot="title">用户管理</span>
-          </template>
-          <el-menu-item-group>
-            <el-menu-item index="/users">
-              <i class="iconfont icon-yonghuliebiao icon-menu"></i>
-              <span slot="title">用户列表</span>
-            </el-menu-item>
-          </el-menu-item-group>
-        </el-submenu>
+        <el-menu-item index="/users">
+          <i class="iconfont icon-yonghuguanli1 icon-menu"></i>
+          <span slot="title">用户管理</span>
+        </el-menu-item>
         <el-submenu index="3">
           <template slot="title">
             <i class="iconfont icon-quanxianguanli2 icon-menu"></i>
@@ -58,18 +50,10 @@
             </el-menu-item>
           </el-menu-item-group>
         </el-submenu>
-        <el-submenu index="5">
-          <template slot="title">
-            <i class="iconfont icon-dingdanguanli1 icon-menu"></i>
-            <span slot="title">订单管理</span>
-          </template>
-          <el-menu-item-group>
-            <el-menu-item index="/orders">
-              <i class="iconfont icon-dingdan icon-menu"></i>
-              <span slot="title">订单列表</span>
-            </el-menu-item>
-          </el-menu-item-group>
-        </el-submenu>
+        <el-menu-item index="/orders">
+          <i class="iconfont icon-dingdanguanli1 icon-menu"></i>
+          <span slot="title">订单管理</span>
+        </el-menu-item>
         <el-submenu index="6">
           <template slot="title">
             <i class="iconfont icon-baobiaoguanli icon-menu"></i>
@@ -105,7 +89,8 @@ export default {
   name: 'Layout',
   data () {
     return {
-      isCollapse: false
+      isCollapse: false,
+      currentRouter: '/'
     }
   },
   methods: {

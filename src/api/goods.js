@@ -6,10 +6,11 @@ import request from '@/utils/request'
 /**
  * 获取商品列表
  */
-export const getGoods = params => request({
+export const getGoods = (params, query) => request({
   method: 'GET',
   url: '/goods',
   params: {
+    query,
     pagenum: params.pagenum,
     pagesize: params.pagesize
   }
@@ -28,3 +29,11 @@ export const getGoods = params => request({
 //     mobile: data.mobile
 //   }
 // }).then(res => res.data)
+
+/**
+ * 删除商品
+ */
+export const deleteGoodsById = id => request({
+  method: 'DELETE',
+  url: `goods/${id}`
+}).then(res => res.data)

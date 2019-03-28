@@ -10,8 +10,9 @@
     </div>
     <el-row :gutter="20" style="margin-top: -10px;margin-bottom: 5px;">
       <el-col :span="8">
-        <el-input placeholder="请输入搜索内容" v-model="searchText" class="input-with-select">
-          <el-button slot="append" icon="el-icon-search"></el-button>
+        <el-input placeholder="请输入搜索内容" v-model="searchText" class="input-with-select"
+          @keyup.enter.native="loadGoods">
+          <el-button slot="append" icon="el-icon-search" @click="loadGoods"></el-button>
         </el-input>
       </el-col>
       <el-col :span="6">
@@ -25,14 +26,27 @@
         </template>
       </el-table-column>
       <el-table-column prop="goods_name" label="商品名称" header-align="center"></el-table-column>
-      <el-table-column prop="goods_price" label="商品价格(￥)" header-align="center" width="110" align="center"></el-table-column>
-      <el-table-column prop="goods_weight" label="商品重量(g)" header-align="center" width="110" align="center"></el-table-column>
-      <el-table-column prop="add_time" label="添加时间" header-align="center" width="200" align="center"></el-table-column>
+      <el-table-column label="商品价格(￥)" header-align="center" width="110" align="center">
+        <template slot-scope="scope">
+          <span v-text="formatFixed(scope.row.goods_price)"></span>
+        </template>
+      </el-table-column>
+      <el-table-column label="商品重量(g)" header-align="center" width="110" align="center">
+        <template slot-scope="scope">
+          <span v-text="formatFixed(scope.row.goods_weight, 1)"></span>
+        </template>
+      </el-table-column>
+      <el-table-column label="添加时间" header-align="center" width="200" align="center">
+        <template slot-scope="scope">
+          <span v-text="formatGoodsDate(scope.row.add_time)"></span>
+        </template>
+      </el-table-column>
       <el-table-column prop="goods_state" label="商品状态" header-align="center" width="80" align="center"></el-table-column>
       <el-table-column label="操作" header-align="center"  align="center" width="200">
         <template slot-scope="scope">
           <el-button type="primary" size="small" plain icon="el-icon-edit" title="编辑"></el-button>
-          <el-button type="danger" size="small" plain icon="el-icon-delete" title="删除"></el-button>
+          <el-button type="danger" size="small" plain icon="el-icon-delete" title="删除"
+            @click="deleteGoods(scope.row)"></el-button>
           <el-button type="warning" size="small" plain icon="el-icon-check" title="审核"></el-button>
         </template>
       </el-table-column>
@@ -48,7 +62,8 @@
 </template>
 
 <script>
-import { getGoods } from '@/api/goods'
+import { getGoods, deleteGoodsById } from '@/api/goods'
+import { formatDate } from '@/utils/format'
 export default {
   name: 'Goods',
   created () {
@@ -69,12 +84,35 @@ export default {
       getGoods({
         pagenum: this.pagenum,
         pagesize: this.pagesize
-      }).then(res => {
+      }, this.searchText).then(res => {
         let { data, meta } = res
         if (meta.status === 200) {
           this.tableGoods = data.goods
           this.total = data.total
         }
+      })
+    },
+    deleteGoods (goods) {
+      this.$confirm('确定要删除该商品吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteGoodsById(goods.goods_id).then(res => {
+          const { meta } = res
+          if (meta.status === 200) {
+            this.$message({
+              type: 'success',
+              message: '删除商品成功!'
+            })
+            this.loadGoods()
+          }
+        })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
       })
     },
     addGoodHandler () {
@@ -90,6 +128,12 @@ export default {
     },
     caculateOrder (index) {
       return (this.pagenum - 1) * this.pagesize + index + 1
+    },
+    formatGoodsDate (date) {
+      return formatDate(date)
+    },
+    formatFixed (number, fix = 2) {
+      return number.toFixed(fix)
     }
   }
 }

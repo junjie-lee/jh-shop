@@ -3,6 +3,10 @@
   padding: 0;
 }
 
+li {
+  list-style: none;
+}
+
 html, body {
   height: 100%;
 }

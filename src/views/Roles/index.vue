@@ -10,11 +10,36 @@
     </div>
     <el-row :gutter="20" style="margin-top: -10px;margin-bottom: 5px;">
       <el-col :span="6">
-        <el-button type="primary" plain @click="addRoleVisible = true">添加角色</el-button>
+        <el-button type="primary" plain @click="addRoleHandler">添加角色</el-button>
       </el-col>
     </el-row>
-    <el-table :data="tableRoles" border stripe style="width: 900px">
-      <el-table-column width="80"></el-table-column>
+    <el-table :data="tableRoles" border stripe style="width: 100%">
+      <el-table-column type="expand" class="expand-column">
+        <template slot-scope="scope">
+          <el-row v-for="first in scope.row.children" :key="first.id" class="first">
+            <el-col :span="4" class="first-col" v-if="first.children.length > 0">
+              <el-tag closable @close="deleteTag(scope.row.id, first.id)">{{ first.authName }}</el-tag>
+              <i class="el-icon-arrow-right next-level"></i>
+            </el-col>
+            <el-col :span="20" v-if="first.children.length > 0">
+              <el-row v-for="second in first.children" :key="second.id" class="second">
+                <el-col :span="4" class="second-col" v-if="second.children.length > 0">
+                  <el-tag closable type="success" @close="deleteTag(scope.row.id, second.id)">
+                    {{ second.authName }}
+                  </el-tag>
+                  <i class="el-icon-arrow-right next-level"></i>
+                </el-col>
+                <el-col :span="20" class="second-col" v-if="second.children.length > 0">
+                  <el-tag closable type="warning" v-for="third in second.children" :key="third.id"
+                    class="third-col" @close="deleteTag(scope.row.id, third.id)">
+                    {{ third.authName }}
+                  </el-tag>
+                </el-col>
+              </el-row>
+            </el-col>
+          </el-row>
+        </template>
+      </el-table-column>
       <!-- <el-table-column label="序号" width="80" header-align="center" align="center">
         <template slot-scope="scope">
           <span v-text="caculateOrder(scope.$index)"></span>
@@ -25,9 +50,12 @@
       <el-table-column prop="roleDesc" label="角色描述" header-align="center"></el-table-column>
       <el-table-column label="操作" header-align="center"  align="center" width="200">
         <template slot-scope="scope">
-          <el-button type="primary" size="small" plain icon="el-icon-edit" title="编辑角色"></el-button>
-          <el-button type="danger" size="small" plain icon="el-icon-delete" title="删除角色"></el-button>
-          <el-button type="warning" size="small" plain icon="el-icon-check" title="授权角色"></el-button>
+          <el-button type="primary" size="small" plain icon="el-icon-edit" title="编辑角色"
+            @click="editRoleHandler(scope.row)"></el-button>
+          <el-button type="danger" size="small" plain icon="el-icon-delete" title="删除角色"
+            @click="deleteRoleHandler(scope.row)"></el-button>
+          <el-button type="warning" size="small" plain icon="el-icon-check" title="授权角色"
+            @click="allotRoleHandler(scope.row)"></el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -38,25 +66,20 @@
       </el-pagination>
     </div> -->
   </el-card>
-  <el-dialog title="添加角色" :visible.sync="addRoleVisible" width="500px">
-    <el-form :model="addForm" label-position="left" :rules="rules" ref="addForm">
-      <el-form-item label="角色名称" prop="roleName" label-width="80px">
-        <el-input v-model="addForm.roleName" autocomplete="off"></el-input>
-      </el-form-item>
-      <el-form-item label="角色描述" prop="roleDesc" label-width="80px">
-        <el-input v-model="addForm.roleDesc" autocomplete="off"></el-input>
-      </el-form-item>
-    </el-form>
-    <div slot="footer" class="dialog-footer">
-      <el-button @click="addRoleVisible = false">取 消</el-button>
-      <el-button type="primary" @click="addRoleHandler">确 定</el-button>
-    </div>
-  </el-dialog>
+  <!-- 添加角色 -->
+  <add-role ref="addRoleEl" v-on:add-role-success="loadRoles"></add-role>
+  <!-- 编辑角色 -->
+  <edit-role ref="editRoleEl" v-on:edit-role-success="loadRoles"></edit-role>
+  <!-- 分配角色权限 -->
+  <allot-role ref="allotRoleEl" v-on:allot-role-success="loadRoles"></allot-role>
 </div>
 </template>
 
 <script>
-import { getRoles, addRole } from '@/api/roles'
+import { getRoles, deleteRole, deleteRightsById } from '@/api/roles'
+import AddRole from './add-role.vue'
+import EditRole from './edit-role.vue'
+import AllotRole from './allot-role.vue'
 export default {
   name: 'Roles',
   created () {
@@ -83,6 +106,11 @@ export default {
       }
     }
   },
+  components: {
+    AddRole,
+    EditRole,
+    AllotRole
+  },
   methods: {
     loadRoles () {
       getRoles().then(res => {
@@ -94,17 +122,45 @@ export default {
       })
     },
     addRoleHandler () {
-      this.$refs['addForm'].validate((valid) => {
-        if (valid) {
-          addRole(this.addForm).then(res => {
-            let { meta } = res
-            console.log(meta)
-            if (meta.status === 201) {
-              this.$refs['addForm'].resetFields()
-              this.addRoleVisible = false
-            }
-          })
-        }
+      this.$refs.addRoleEl.showAddDialog()
+    },
+    editRoleHandler (role) {
+      this.$refs.editRoleEl.showDialog(role)
+    },
+    allotRoleHandler (role) {
+      this.$refs.allotRoleEl.showDialog(role)
+    },
+    async deleteTag (roleId, rightsId) {
+      const { meta } = await deleteRightsById(roleId, rightsId)
+      if(meta.status === 200) {
+        this.$message({
+          type: 'success',
+          message: '删除权限成功!'
+        })
+        this.loadRoles()
+      }
+    },
+    deleteRoleHandler (role) {
+      this.$confirm('确定要删除该角色吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteRole(role.id).then(res => {
+          const { meta } = res
+          if (meta.status === 200) {
+            this.$message({
+              type: 'success',
+              message: '删除角色成功!'
+            })
+            this.loadRoles()
+          }
+        })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
       })
     }
     // handleSizeChange (val) {
@@ -132,6 +188,28 @@ export default {
   display: flex;
   align-items: center;
 }
+.roles .first-col {
+  padding: 5px 0;
+}
+.roles .second-col {
+  padding-top: 5px;
+  padding-bottom: 3px;
+}
+.roles .third-col {
+  margin-right: 2px;
+  margin-bottom: 2px;
+}
+.roles .second {
+  border-bottom: 1px solid #EBEEF5;
+}
+.roles .first:last-child .second {
+  border-bottom: none;
+}
+.roles .next-level {
+  font-size: 18px;
+  font-weight: 700;
+  color: #909399;
+}
 </style>
 
 <style>
@@ -140,5 +218,8 @@ export default {
 }
 .roles .el-card__header {
   background-color: #D3DCE6;
+}
+.roles .el-table__expanded-cell {
+  padding: 5px 5px;
 }
 </style>

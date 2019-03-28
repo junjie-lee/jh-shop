@@ -6,7 +6,7 @@ import request from '@/utils/request'
 /**
  * 获取权限列表
  */
-export const getRights = () => request({
+export const getRights = (type = 'list') => request({
   method: 'GET',
-  url: '/rights/list'
+  url: `/rights/${type}`
 }).then(res => res.data)
